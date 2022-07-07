@@ -1,9 +1,10 @@
 let fs = require('fs')
+let path = require("path")
 
 let songs = {}
 
 function save() {
-    fs.writeFileSync("config.json", JSON.stringify(songs, null, "\t"), "utf-8")
+    fs.writeFileSync("./data/config.json", JSON.stringify(songs, null, "\t"), "utf-8")
 }
 
 function stopAll() {
@@ -15,14 +16,14 @@ function stopAll() {
 }
 
 function loadSongs() {
-    let files = fs.readdirSync("./")
+    let files = fs.readdirSync("./data")
     for (let i in files) {
         if (files[i].match(/.(wav|mp3|ogg)$/)) {
             songs[files[i]] = {}
         }
     }
-    if (fs.existsSync("config.json")) {
-        let config = require("./config.json")
+    if (fs.existsSync("./data/config.json")) {
+        let config = require(path.resolve("./data/config.json"))
         for (let i in config) {
             if (songs[i]) {
                 songs[i].start = config[i].start
@@ -41,7 +42,7 @@ function generateRows() {
             <td><button class="endSong">Let song end</button></td>
             <td><label>Loop start (seconds): <input type="number" class="loopStart" ${songs[i].start ? 'value="' + songs[i].start + '"' : ""}></label></td>
             <td><label>Loop end (seconds): <input type="number" class="loopEnd" ${songs[i].end ? 'value="' + songs[i].end + '"' : ""}></label></td>
-            <td><audio controls><source src="${i}" type="audio/${i.match(/.(wav|mp3|ogg)$/)[1]}"></audio></td>
+            <td><audio controls><source src="${path.resolve("./data/" + i)}" type="audio/${i.match(/.(wav|mp3|ogg)$/)[1]}"></audio></td>
         </tr>`
 
         //https://grrr.tech/posts/create-dom-node-from-html-string/
@@ -77,7 +78,7 @@ function letSongEnd(key) {
 
 function loopSongs() {
     for (let i in songs) {
-        if (songs[i].looping) {
+        if (songs[i].looping && songs[i].start && songs[i].end) {
             if (songs[i].element.querySelector("audio").currentTime >= songs[i].end) {
                 songs[i].element.querySelector("audio").currentTime -= songs[i].end - songs[i].start
             }
