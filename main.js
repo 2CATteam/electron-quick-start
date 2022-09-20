@@ -1,10 +1,12 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow} = require('electron')
+const {app, BrowserWindow, globalShortcut, ipcMain} = require('electron')
 const path = require('path')
+
+let mainWindow
 
 function createWindow () {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1280,
     height: 720,
     webPreferences: {
@@ -19,7 +21,16 @@ function createWindow () {
   mainWindow.loadFile('index.html')
 
   // Open the DevTools.
-  // mainWindow.webContents.openDevTools()
+  mainWindow.webContents.openDevTools()
+
+  for (let i = 1; i <= 24; i++) {
+    let ret = globalShortcut.register(`CommandOrControl+Shift+F${i}`, () => {
+      mainWindow.webContents.send("hotkeys", i)
+    })
+    if (!ret) {
+      console.error("Failed to register event handler", i)
+    }
+  }
 }
 
 // This method will be called when Electron has finished
@@ -42,5 +53,7 @@ app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit()
 })
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
+app.on('will-quit', () => {
+  // Unregister all shortcuts.
+  globalShortcut.unregisterAll()
+})

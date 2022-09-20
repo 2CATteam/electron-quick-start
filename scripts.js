@@ -1,7 +1,9 @@
 let fs = require('fs')
 let path = require("path")
+const { ipcRenderer } = require('electron')
 
 let songs = {}
+let keys = []
 
 function save() {
     fs.writeFileSync("./data/config.json", JSON.stringify(songs, null, "\t"), "utf-8")
@@ -63,6 +65,7 @@ function generateRows() {
 
         document.getElementById("songItems").append(newElement)
         songs[i].element = newElement
+        keys.push(i)
     }
 }
 
@@ -85,6 +88,26 @@ function loopSongs() {
         }
     }
 }
+
+ipcRenderer.on('hotkeys', (event, message) => {
+    console.log(message)
+    let key = keys[message - 1]
+    if (!songs[key]) {
+        console.error("Invalid message", key)
+    }
+    if (!songs[key].looping) {
+        if (songs[key].element.querySelector("audio").paused) {
+            console.log("Starting loop")
+            startSongLoop(key)
+        } else {
+            console.log("Stopping song")
+            songs[key].element.querySelector("audio").pause()
+        }
+    } else {
+        console.log("Letting song end")
+        letSongEnd(key)
+    }
+})
 
 loadSongs()
 setInterval(loopSongs, 1)
